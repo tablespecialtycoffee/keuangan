@@ -267,6 +267,7 @@ table.lines .del{min-height:40px;padding:8px 12px}
             <option value="BELUM_DIBAYAR">Belum dibayar sama sekali</option>
             <option value="SEBAGIAN">Dibayar sebagian</option>
             <option value="LUNAS">Lunas</option>
+            <option value="BATAL">Dibatalkan</option>
           </select></div>
         <p class="muted" style="margin:0 0 14px">Centang beberapa bon dari supplier yang sama untuk membayar dengan satu transfer.</p>
       </div>
@@ -329,6 +330,11 @@ table.lines .del{min-height:40px;padding:8px 12px}
           <button class="btn quiet" id="bd-ulang" title="Baca ulang teks foto dengan pembaca terbaru. Isian yang belum disimpan akan ditimpa.">Baca ulang dari foto</button>
         </div>
         <div class="msg" id="bd-msg"></div>
+        <details id="bd-batal" style="margin-top:22px" hidden><summary class="link" style="cursor:pointer;color:var(--due)">Batalkan bon ini (salah / dobel)</summary>
+          <p class="muted">Bon tidak dihapus: statusnya jadi BATAL, keluar dari daftar hutang, dan fotonya dipindah ke folder Arsip &rsaquo; Batal. Bon yang sudah ada pembayarannya tidak bisa dibatalkan.</p>
+          <div class="field"><label for="bd-alasan">Alasan pembatalan</label><input id="bd-alasan" placeholder="Contoh: bon dobel, foto salah, salah supplier"></div>
+          <button class="btn" id="bd-batal-btn" style="background:var(--due);border-color:var(--due)">Batalkan bon</button>
+          <div class="msg" id="bd-batal-msg"></div></details>
         <details style="margin-top:22px"><summary class="link" style="cursor:pointer">Teks yang terbaca dari foto</summary>
           <pre id="bd-ocr" class="ocr"></pre></details>
       </div>
@@ -709,7 +715,7 @@ function isiDetail(d) {
   $('#bd-load').textContent = '';
   $('#bd-body').hidden = false;
   $('#bd-title').textContent = bisaUbah ? 'Cocokkan bon' : 'Detail bon';
-  $('#bd-lede').textContent = bisaUbah
+  $('#bd-lede').textContent = d.status === 'BATAL' ? 'Bon ini sudah DIBATALKAN. ' + (d.catatan_konfirmasi || '') : bisaUbah
     ? 'Isi di bawah dibaca otomatis dari foto. Cocokkan dengan foto dan barang yang datang, lalu perbaiki yang salah.'
     : 'Bon ini sudah dikonfirmasi' + (d.dikonfirmasi_at ? ' (' + d.dikonfirmasi_at + ')' : '') + ' dan tidak bisa diubah lagi.';
   if (d.foto_base64) { $('#bd-img').src = 'data:' + d.foto_mime + ';base64,' + d.foto_base64; $('#bd-img').hidden = false; $('#bd-nofoto').hidden = true; }
@@ -729,8 +735,22 @@ function isiDetail(d) {
   document.querySelectorAll('#bd-body input, #bd-body select').forEach(function (el) { el.disabled = !bisaUbah; });
   $('#bd-add').hidden = !bisaUbah; $('#bd-actions').hidden = !bisaUbah; $('#bd-checks').hidden = !bisaUbah;
   document.querySelectorAll('#bd-lines .del').forEach(function (b) { b.hidden = !bisaUbah; });
+  var bisaBatal = OWNER() && d.status !== 'BATAL' && d.status !== 'LUNAS' && d.status !== 'SEBAGIAN';
+  $('#bd-batal').hidden = !bisaBatal; $('#bd-batal').open = false;
+  $('#bd-alasan').disabled = !bisaBatal; $('#bd-alasan').value = ''; $('#bd-batal-msg').textContent = '';
   hitungBon();
 }
+$('#bd-batal-btn').onclick = function () {
+  if (!BD) return;
+  var alasan = $('#bd-alasan').value.trim();
+  if (alasan.length < 3) { say('#bd-batal-msg', 'Isi alasan pembatalan dulu.', true); return; }
+  if (!confirm('Batalkan bon ' + (BD.supplier || '') + '? Bon keluar dari daftar hutang.')) return;
+  say('#bd-batal-msg', 'Membatalkan...');
+  call('batalBon', { bon_id: BD.bon_id, alasan: alasan }).then(function (r) {
+    say('#bd-batal-msg', 'Bon dibatalkan.' + (r.arsip_gagal ? ' Foto gagal dipindah ke Arsip, pindahkan manual.' : ''));
+    setTimeout(function () { $('#bn-filter').value = 'AKTIF'; show('bon'); }, 1200);
+  }).catch(function (e) { say('#bd-batal-msg', errText(e), true); });
+};
 $('#bd-back').onclick = function () { show('bon'); };
 $('#bd-img').onclick = function () { this.classList.toggle('zoom'); };
 $('#bd-add').onclick = function () {
@@ -795,6 +815,12 @@ function loadBon() {
           '</div></div>' +
           '<div class="amt"><div class="money">' + (b.total_rp ? rp(b.total_rp) : 'Rp –') + '</div><div class="muted">belum dicek</div></div>' +
           '<div style="grid-column:2/-1"><button class="btn" onclick="bukaBon(\'' + b.bon_id + '\')">Cocokkan dan konfirmasi</button></div></div>';
+      }
+      if (b.status === 'BATAL') {
+        return '<div class="bon st-lunas" style="opacity:.6"><span></span><div><div class="sup">' + esc(b.supplier) + '</div>' +
+          '<div class="meta">Dibatalkan. ' + esc(b.catatan_konfirmasi || '') + '</div></div>' +
+          '<div class="amt"><div class="money" style="text-decoration:line-through">' + rp(b.total_rp) + '</div></div>' +
+          '<div style="grid-column:2/-1"><button class="btn quiet" onclick="bukaBon(\'' + b.bon_id + '\')">Lihat bon</button></div></div>';
       }
       var lunas = b.status === 'LUNAS';
       var cls = lunas ? 'st-lunas' : (b.lewat_tempo ? 'st-due' : 'st-hutang');
