@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Table Coffee Keuangan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF1EA; --sheet:#F8FAF6; --ink:#1C2620; --soft:#5E6B62; --bean:#2F6B4F; --bean-ink:#FFFFFF;
+  --roast:#6B4A34; --due:#B3362B; --soon:#C08A1E; --line:#CBD3CA; --focus:#2F6B4F;
+  --display:'Bricolage Grotesque', 'Segoe UI', sans-serif; --text:'Instrument Sans', 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#141C17; --sheet:#1B251F; --ink:#E4EBE4; --soft:#9AA89E; --bean:#7DC49F; --bean-ink:#10221A;
+  --roast:#C99A78; --due:#F07B6E; --soon:#E7B95A; --line:#2E3A32; --focus:#7DC49F;}}
+:root[data-theme="dark"]{
+  --paper:#141C17; --sheet:#1B251F; --ink:#E4EBE4; --soft:#9AA89E; --bean:#7DC49F; --bean-ink:#10221A;
+  --roast:#C99A78; --due:#F07B6E; --soon:#E7B95A; --line:#2E3A32; --focus:#7DC49F;}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 var(--text);-webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+[hidden]{display:none!important}
+
+/* ---------- kerangka ---------- */
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.rail{position:sticky;top:0;height:100vh;padding:28px 18px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:28px}
+.brand{font:800 22px/1.05 var(--display);letter-spacing:-.02em}
+.brand small{display:block;font:500 13px/1.4 var(--text);color:var(--soft);letter-spacing:0;margin-top:4px}
+nav{display:flex;flex-direction:column;gap:2px}
+nav button{all:unset;cursor:pointer;padding:9px 12px;border-radius:8px;color:var(--soft);font-weight:500}
+nav button:hover{color:var(--ink);background:var(--sheet)}
+nav button.on{color:var(--ink);background:var(--sheet);box-shadow:inset 3px 0 0 var(--bean)}
+nav .sep{height:1px;background:var(--line);margin:10px 12px}
+.who{margin-top:auto;display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--soft)}
+.who .btn{min-height:38px;padding:9px 12px}
+@media (max-width:760px){.who{position:fixed;top:10px;right:12px;flex-direction:row;align-items:center;background:var(--sheet);
+  border:1px solid var(--line);border-radius:10px;padding:4px 4px 4px 10px}}
+main{padding:36px clamp(16px,4vw,56px) 80px;max-width:1000px;width:100%}
+
+@media (max-width:760px){
+  .app{grid-template-columns:1fr}
+  .rail{position:fixed;inset:auto 0 0 0;height:auto;padding:0;border:0;border-top:1px solid var(--line);
+    background:var(--sheet);z-index:10;flex-direction:row}
+  .brand{display:none}
+  nav{flex-direction:row;overflow-x:auto;padding:6px 8px calc(6px + env(safe-area-inset-bottom));gap:4px;width:100%;scrollbar-width:none}
+  nav .sep{display:none}
+  nav button{white-space:nowrap;padding:10px 12px;font-size:15px}
+  nav button.on{box-shadow:inset 0 -3px 0 var(--bean)}
+  main{padding:22px 16px 110px}
+}
+
+/* ---------- tipografi ---------- */
+h1{font:800 clamp(30px,5vw,44px)/1.02 var(--display);letter-spacing:-.025em;margin:0 0 6px}
+h2{font:700 20px/1.2 var(--display);letter-spacing:-.01em;margin:0 0 12px}
+.lede{color:var(--soft);margin:0 0 26px;max-width:60ch}
+.muted{color:var(--soft);font-size:14px}
+.money{font:700 clamp(26px,4vw,34px)/1 var(--display);letter-spacing:-.02em}
+
+/* ---------- blok ---------- */
+.block{padding:22px 0;border-top:1px solid var(--line)}
+.block:first-of-type{border-top:0;padding-top:0}
+.panel{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:20px}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.cols2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:620px){.cols,.cols2{grid-template-columns:1fr}}
+
+label{display:block;font-size:14px;font-weight:500;color:var(--soft);margin:0 0 6px}
+.field{margin-bottom:14px}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);
+  color:var(--ink);font:inherit;min-height:46px}
+textarea{min-height:120px;resize:vertical;font:14px/1.45 ui-monospace,Consolas,monospace}
+input[type=file]{padding:9px;background:transparent;border-style:dashed}
+.row-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:4px}
+
+.btn{appearance:none;border:0;cursor:pointer;font:600 15px/1 var(--text);padding:13px 18px;border-radius:10px;
+  background:var(--bean);color:var(--bean-ink);min-height:46px}
+.btn:hover{filter:brightness(1.07)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.quiet{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.link{color:var(--bean);font-weight:500;text-underline-offset:3px}
+
+.msg{margin-top:10px;font-size:15px;min-height:1px}
+.ok{color:var(--bean)} .err{color:var(--due)}
+
+/* ---------- tabel ---------- */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;font-weight:500;color:var(--soft);font-size:13px;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.r{text-align:right;white-space:nowrap}
+.empty{padding:26px 0;color:var(--soft)}
+
+/* ---------- pita jatuh tempo (elemen utama) ---------- */
+.ledger-head{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:18px;align-items:end;margin-bottom:14px}
+.ledger-head .big{font:800 clamp(38px,7vw,64px)/.95 var(--display);letter-spacing:-.035em}
+.ledger-head .k{font-size:14px;color:var(--soft);margin-top:6px}
+.ledger-head .due .money{color:var(--due)}
+.ledger-head .soon .money{color:var(--soon)}
+.strip{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line)}
+.strip span{display:block;height:100%;transition:flex-grow .5s ease}
+.strip .s-due{background:var(--due)} .strip .s-soon{background:var(--soon)} .strip .s-later{background:var(--bean)}
+.strip-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--soft)}
+.strip-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+@media (max-width:620px){.ledger-head{grid-template-columns:1fr 1fr}.ledger-head .total{grid-column:1/-1}}
+
+/* ---------- daftar bon ---------- */
+.bon{display:grid;grid-template-columns:auto 1fr auto;gap:14px;padding:16px 14px 16px 16px;border-bottom:1px solid var(--line);
+  position:relative}
+.bon::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:2px;background:var(--line)}
+.bon.st-tunggu::before{background:var(--roast)}
+.rek{margin-top:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.rek .no{font:700 18px/1.2 var(--display);letter-spacing:.04em}
+.rek .btn{min-height:36px;padding:8px 12px;font-size:14px}
+.check{display:flex;gap:10px;align-items:center;margin:6px 0;font-weight:500;color:var(--ink)}
+.check input{width:22px;height:22px;min-height:0;accent-color:var(--bean)}
+.notice{color:var(--roast);font-weight:600}
+.bon.st-hutang::before{background:var(--soon)} .bon.st-due::before{background:var(--due)} .bon.st-lunas::before{background:var(--bean)}
+.bon input[type=checkbox]{width:22px;height:22px;min-height:0;margin-top:3px;accent-color:var(--bean)}
+.bon .sup{font:700 17px/1.25 var(--display)}
+.bon .meta{font-size:14px;color:var(--soft);margin-top:2px}
+.bon .due-txt{color:var(--due);font-weight:600}
+.bon .amt{text-align:right}
+.bon .amt .money{font-size:22px}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--soft);
+  margin-left:6px;vertical-align:2px}
+.bon details{grid-column:2/-1;margin-top:4px}
+.bon summary{cursor:pointer;color:var(--bean);font-weight:600;list-style:none;padding:6px 0}
+.bon summary::-webkit-details-marker{display:none}
+.bon details[open] summary{margin-bottom:10px}
+.paybar{position:sticky;top:12px;z-index:5;margin-bottom:16px;border-color:var(--bean);box-shadow:0 0 0 1px var(--bean)}
+
+/* ---------- absen ---------- */
+.kiosk{max-width:360px}
+.pin-display{font:800 40px/1 var(--display);letter-spacing:.4em;text-align:center;padding:18px 0 14px;min-height:76px;
+  border-bottom:2px solid var(--ink);margin-bottom:18px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pad button{appearance:none;border:1px solid var(--line);background:var(--sheet);color:var(--ink);border-radius:14px;
+  font:700 26px/1 var(--display);min-height:64px;cursor:pointer}
+.pad button:active{background:var(--line)}
+.pad .fn{font:600 15px/1 var(--text);color:var(--soft)}
+.inout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.inout .btn{min-height:58px;font-size:17px}
+.inout .btn.out{background:var(--roast);color:#fff}
+.clock{font:500 15px var(--text);color:var(--soft);margin-bottom:22px}
+.result{margin-top:18px;padding:14px 16px;border-radius:12px;background:var(--sheet);border:1px solid var(--line);font-size:16px}
+.result:empty{display:none}
+
+.login{max-width:380px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand">Table Coffee<small>Buku kas</small></div>
+    <nav aria-label="Menu">
+      <button data-tab="absen" class="on">Absen</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button data-tab="bon">Bon &amp; hutang</button>
+      <button data-tab="omset">Omset</button>
+      <button data-tab="gaji">Gaji</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button data-tab="karyawan">Karyawan</button>
+      <button data-tab="shift">Shift</button>
+      <button data-tab="absensi">Rekap absensi</button>
+    </nav>
+    <div class="who" id="who" hidden><span id="who-role"></span><button class="btn quiet" id="logout">Keluar</button></div>
+  </aside>
+
+  <main>
+
+  <!-- LOGIN PEMILIK -->
+  <section id="tab-login" hidden>
+    <div class="login">
+      <h1>Masuk</h1>
+      <p class="lede">Bagian ini untuk pemilik dan admin finance.</p>
+      <div class="field"><label for="lg-pw">Kata sandi</label>
+        <input id="lg-pw" type="password" autocomplete="current-password"></div>
+      <button class="btn" id="lg-btn">Masuk</button>
+      <div class="msg" id="lg-msg"></div>
+    </div>
+  </section>
+
+  <!-- ABSEN -->
+  <section id="tab-absen">
+    <div class="kiosk">
+      <h1>Absen</h1>
+      <div class="clock" id="ab-clock"></div>
+      <input id="ab-pin" type="hidden">
+      <div class="pin-display" id="ab-dots" aria-live="polite" aria-label="PIN"></div>
+      <div class="pad" id="ab-pad">
+        <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+        <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+        <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+        <button data-k="del" class="fn" aria-label="Hapus satu angka">Hapus</button><button data-k="0">0</button><button data-k="clr" class="fn">Ulang</button>
+      </div>
+      <div class="inout">
+        <button class="btn" data-absen="masuk">Absen masuk</button>
+        <button class="btn out" data-absen="keluar">Absen keluar</button>
+      </div>
+      <div class="result" id="ab-msg" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- BON & HUTANG -->
+  <section id="tab-bon" hidden>
+    <h1>Bon &amp; hutang</h1>
+    <p class="lede">Foto bon saat barang datang. Bayar sebelum jatuh tempo, dan unggah bukti transfernya.</p>
+
+    <div class="block" id="bn-sum"></div>
+
+    <div class="panel paybar" id="bn-multi" hidden>
+      <h2>Bayar sekaligus</h2>
+      <p class="muted" id="bn-multi-info"></p>
+      <div class="cols">
+        <div class="field"><label for="bm-tgl">Tanggal bayar</label><input id="bm-tgl" type="date"></div>
+        <div class="field"><label for="bm-met">Metode</label><select id="bm-met"><option>Transfer</option><option>Tunai</option><option>QRIS</option><option>Lainnya</option></select></div>
+        <div class="field"><label for="bm-file">Bukti transfer</label><input id="bm-file" type="file" accept="image/*,application/pdf"></div>
+      </div>
+      <button class="btn" id="bm-save">Lunasi bon terpilih</button>
+      <div class="msg" id="bm-msg"></div>
+    </div>
+
+    <div class="block">
+      <div class="cols2" style="align-items:end;margin-bottom:6px">
+        <div class="field"><label for="bn-filter">Tampilkan</label>
+          <select id="bn-filter">
+            <option value="AKTIF">Perlu tindakan</option>
+            <option value="MENUNGGU_KONFIRMASI">Menunggu konfirmasi</option>
+            <option value="HUTANG">Belum lunas</option>
+            <option value="SEMUA">Semua bon</option>
+            <option value="BELUM_DIBAYAR">Belum dibayar sama sekali</option>
+            <option value="SEBAGIAN">Dibayar sebagian</option>
+            <option value="LUNAS">Lunas</option>
+          </select></div>
+        <p class="muted" style="margin:0 0 14px">Centang beberapa bon dari supplier yang sama untuk membayar dengan satu transfer.</p>
+      </div>
+      <div id="bn-list"></div>
+    </div>
+
+    <div class="block">
+      <h2>Bon masuk</h2>
+      <p class="muted">Langkah 1: foto bon saat barang datang. Langkah 2: hitung barang dan cek harga, lalu konfirmasi di daftar atas. Bon baru bisa dibayar setelah dikonfirmasi.</p>
+      <div class="field"><label for="bn-file">Foto bon</label><input id="bn-file" type="file" accept="image/*,application/pdf" capture="environment"></div>
+      <div class="cols">
+        <div class="field"><label for="bn-tgl">Tanggal bon</label><input id="bn-tgl" type="date"></div>
+        <div class="field"><label for="bn-sup">Supplier</label><input id="bn-sup" list="dl-sup" placeholder="Nama supplier"><datalist id="dl-sup"></datalist></div>
+        <div class="field"><label for="bn-total">Total di bon (Rp)</label><input id="bn-total" inputmode="numeric" placeholder="Boleh diisi saat konfirmasi"></div>
+        <div class="field"><label for="bn-kat">Kategori</label><select id="bn-kat">
+          <option value="BAHAN">Bahan baku</option><option value="OPERASIONAL">Operasional (listrik, sewa, dll.)</option>
+          <option value="PERALATAN">Peralatan</option><option value="LAINNYA">Lainnya</option></select></div>
+        <div class="field"><label for="bn-termin">Termin bayar (hari)</label><input id="bn-termin" inputmode="numeric" value="0"></div>
+        <div class="field"><label for="bn-desc">Isi bon</label><input id="bn-desc" placeholder="Susu 12 L, gula 5 kg"></div>
+      </div>
+      <h2 style="margin-top:8px">Rekening supplier</h2>
+      <p class="muted">Terisi otomatis dari bon sebelumnya untuk supplier yang sama. Kosongkan jika dibayar tunai.</p>
+      <div class="cols">
+        <div class="field"><label for="bn-bank">Bank</label><input id="bn-bank" placeholder="BCA, BRI, Mandiri"></div>
+        <div class="field"><label for="bn-norek">Nomor rekening</label><input id="bn-norek" inputmode="numeric"></div>
+        <div class="field"><label for="bn-an">Atas nama</label><input id="bn-an"></div>
+      </div>
+      <button class="btn" id="bn-save">Simpan foto bon</button>
+      <div class="msg" id="bn-msg"></div>
+    </div>
+  </section>
+
+  <!-- OMSET -->
+  <section id="tab-omset" hidden>
+    <h1>Omset</h1>
+    <p class="lede">Penjualan per hari. Non-tunai dihitung otomatis dari total dikurangi tunai.</p>
+
+    <div class="block">
+      <div class="cols2" style="max-width:420px"><div class="field"><label for="om-ym">Bulan</label><input id="om-ym" type="month"></div></div>
+      <div id="om-sum"></div>
+    </div>
+
+    <div class="block">
+      <h2>Impor dari Majoo</h2>
+      <p class="muted">Ekspor laporan penjualan detail sebagai CSV di Majoo, salin seluruh isinya, lalu tempel di sini. Periksa pratinjau sebelum menyimpan.</p>
+      <div class="field"><label for="im-csv">Isi CSV</label><textarea id="im-csv" rows="6"></textarea></div>
+      <div class="row-actions">
+        <button class="btn quiet" id="im-prev">Lihat pratinjau</button>
+        <button class="btn" id="im-save" disabled>Simpan ke omset</button>
+      </div>
+      <div class="msg" id="im-msg"></div>
+      <div id="im-out" style="margin-top:12px"></div>
+    </div>
+
+    <div class="block">
+      <h2>Catat manual</h2>
+      <div class="cols">
+        <div class="field"><label for="om-tgl">Tanggal</label><input id="om-tgl" type="date"></div>
+        <div class="field"><label for="om-total">Total omset (Rp)</label><input id="om-total" inputmode="numeric" placeholder="1500000"></div>
+        <div class="field"><label for="om-tunai">Tunai (Rp)</label><input id="om-tunai" inputmode="numeric" placeholder="800000"></div>
+      </div>
+      <div class="field"><label for="om-cat">Catatan</label><input id="om-cat"></div>
+      <button class="btn" id="om-save">Simpan omset</button>
+      <div class="msg" id="om-msg"></div>
+    </div>
+  </section>
+
+  <!-- GAJI -->
+  <section id="tab-gaji" hidden>
+    <h1>Gaji</h1>
+    <p class="lede">Gaji pokok ditambah lembur: jam kerja di atas 8 jam per hari dikali tarif lembur. Gaji yang sudah dibayar tidak dihitung ulang.</p>
+    <div class="cols2" style="align-items:end;max-width:560px">
+      <div class="field"><label for="gj-ym">Periode</label><input id="gj-ym" type="month"></div>
+      <div class="field"><button class="btn" id="gj-hitung">Hitung gaji</button></div>
+    </div>
+    <div class="msg" id="gj-msg"></div>
+    <div class="table-wrap" id="gj-list" style="margin-top:8px"></div>
+  </section>
+
+  <!-- KARYAWAN -->
+  <section id="tab-karyawan" hidden>
+    <h1>Karyawan</h1>
+    <p class="lede">PIN dipakai karyawan untuk absen. Setiap PIN harus berbeda.</p>
+    <div class="block table-wrap" id="kr-list"></div>
+    <div class="block">
+      <h2 id="kr-title">Tambah karyawan</h2>
+      <input id="kr-id" type="hidden">
+      <div class="cols">
+        <div class="field"><label for="kr-nama">Nama</label><input id="kr-nama"></div>
+        <div class="field"><label for="kr-pin">PIN (4–6 angka)</label><input id="kr-pin" inputmode="numeric" maxlength="6" placeholder="Kosongkan jika tidak diganti"></div>
+        <div class="field"><label for="kr-aktif">Status</label><select id="kr-aktif"><option value="YA">Aktif</option><option value="TIDAK">Tidak aktif</option></select></div>
+        <div class="field"><label for="kr-gaji">Gaji pokok per bulan (Rp)</label><input id="kr-gaji" inputmode="numeric"></div>
+        <div class="field"><label for="kr-tarif">Tarif lembur per jam (Rp)</label><input id="kr-tarif" inputmode="numeric"></div>
+      </div>
+      <div class="row-actions">
+        <button class="btn" id="kr-save">Simpan karyawan</button>
+        <button class="btn quiet" id="kr-reset">Kosongkan formulir</button>
+      </div>
+      <div class="msg" id="kr-msg"></div>
+    </div>
+  </section>
+
+  <!-- SHIFT -->
+  <section id="tab-shift" hidden>
+    <h1>Shift</h1>
+    <div class="block">
+      <div class="cols2" style="max-width:420px"><div class="field"><label for="sf-ym">Bulan</label><input id="sf-ym" type="month"></div></div>
+      <div class="table-wrap" id="sf-list"></div>
+    </div>
+    <div class="block">
+      <h2>Tambah shift</h2>
+      <div class="cols">
+        <div class="field"><label for="sf-tgl">Tanggal</label><input id="sf-tgl" type="date"></div>
+        <div class="field"><label for="sf-kar">Karyawan</label><select id="sf-kar"></select></div>
+        <div class="field"><label for="sf-kode">Nama shift</label><input id="sf-kode" placeholder="Pagi, siang, atau tutup"></div>
+        <div class="field"><label for="sf-mulai">Mulai</label><input id="sf-mulai" type="time"></div>
+        <div class="field"><label for="sf-selesai">Selesai</label><input id="sf-selesai" type="time"></div>
+      </div>
+      <button class="btn" id="sf-save">Tambah shift</button>
+      <div class="msg" id="sf-msg"></div>
+    </div>
+  </section>
+
+  <!-- REKAP ABSENSI -->
+  <section id="tab-absensi" hidden>
+    <h1>Rekap absensi</h1>
+    <div class="cols2" style="max-width:420px"><div class="field"><label for="ab-ym">Bulan</label><input id="ab-ym" type="month"></div></div>
+    <div class="table-wrap" id="ab-list"></div>
+  </section>
+
+  </main>
+</div>
+
+<script>
+var $ = function (s) { return document.querySelector(s); };
+var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+var rp = function (n) { return 'Rp ' + String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); };
+var hariIni = function () { return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Pontianak' }).format(new Date()); };
+var bulanIni = function () { return hariIni().slice(0, 7); };
+var tglPanjang = function (ymd) {
+  if (!ymd) return '';
+  var p = String(ymd).split('-');
+  var bln = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][Number(p[1]) - 1];
+  return Number(p[2]) + ' ' + bln + ' ' + p[0];
+};
+var PW = '';
+var ROLE = '';
+try { PW = sessionStorage.getItem('tc_fin_pw') || ''; ROLE = sessionStorage.getItem('tc_fin_role') || ''; } catch (e) {}
+function OWNER() { return ROLE === 'pemilik'; }
+function tampilPeran() {
+  $('#who').hidden = !PW;
+  $('#who-role').textContent = ROLE === 'pemilik' ? 'Masuk sebagai pemilik' : 'Masuk sebagai admin finance';
+}
+var KARYAWAN = [];
+
+// Alamat API Apps Script (deployment web app). Dipakai saat halaman dibuka dari GitHub Pages.
+var API_URL = 'https://script.google.com/macros/s/AKfycbx3DGy80wCEwyLe9HDK6v8mfYf-22Tw-TKizB_OwQDLwRRUQ4KztpUgtj_oVuMG-K93/exec';
+function call(action, data) {
+  var payload = Object.assign({ pw: PW }, data || {});
+  if (window.google && google.script && google.script.run) {      // dibuka langsung dari Apps Script
+    return new Promise(function (ok, fail) {
+      google.script.run
+        .withSuccessHandler(function (r) { r.ok ? ok(r.data) : fail(new Error(r.error)); })
+        .withFailureHandler(function (e) { fail(new Error((e && e.message) || String(e))); })
+        .api(action, payload);
+    });
+  }
+  // text/plain = permintaan sederhana (tanpa preflight CORS); tanpa cookie Google, jadi aman dari bug multi-akun.
+  return fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: action, payload: payload }), credentials: 'omit' })
+    .catch(function () { throw new Error('Tidak bisa terhubung ke server. Periksa internet lalu coba lagi.'); })
+    .then(function (res) {
+      if (!res.ok) throw new Error('Server sedang bermasalah (' + res.status + '). Coba lagi sebentar.');
+      return res.json().catch(function () { throw new Error('Jawaban server tidak terbaca. Coba lagi.'); });
+    })
+    .then(function (r) { if (!r.ok) throw new Error(r.error); return r.data; });
+}
+function say(id, text, bad) { $(id).innerHTML = '<span class="' + (bad ? 'err' : 'ok') + '">' + esc(text) + '</span>'; }
+function errText(e) { return (e && e.message) ? e.message : String(e); }
+function kosong(teks) { return '<div class="empty">' + esc(teks) + '</div>'; }
+
+// Foto diperkecil ke 1600 px JPEG; PDF dikirim apa adanya.
+function prepFile(file) {
+  return new Promise(function (ok, fail) {
+    if (!file) return ok(null);
+    if (file.type === 'application/pdf') {
+      var r = new FileReader();
+      r.onload = function () { ok({ base64: r.result.split(',')[1], mime: 'application/pdf', name: file.name }); };
+      r.onerror = function () { fail(new Error('PDF tidak bisa dibaca.')); };
+      return r.readAsDataURL(file);
+    }
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      var k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      var c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      ok({ base64: c.toDataURL('image/jpeg', 0.8).split(',')[1], mime: 'image/jpeg', name: file.name.replace(/\.[^.]+$/, '') + '.jpg' });
+    };
+    img.onerror = function () { fail(new Error('Foto tidak bisa dibaca. Pakai foto JPG atau PNG.')); };
+    img.src = url;
+  });
+}
+
+// ---------- navigasi ----------
+var LOAD = {
+  omset: loadOmset, bon: loadBon, karyawan: loadKaryawan,
+  shift: function () { return loadKaryawanOpsi().then(loadShift); }, absensi: loadAbsensi, gaji: loadGaji
+};
+function show(tab) {
+  var tujuan = tab;
+  if (tab !== 'absen' && !PW) tab = 'login';
+  document.querySelectorAll('nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tujuan); });
+  document.querySelectorAll('main > section').forEach(function (s) { s.hidden = s.id !== 'tab-' + tab; });
+  show.tujuan = tujuan;
+  window.scrollTo(0, 0);
+  if (tab !== 'login' && tab !== 'absen' && LOAD[tab]) LOAD[tab]().catch(function (e) { alert(errText(e)); });
+  if (tab === 'login') setTimeout(function () { $('#lg-pw').focus(); }, 50);
+}
+document.querySelectorAll('nav button').forEach(function (b) {
+  b.addEventListener('click', function () { show(b.dataset.tab); });
+});
+$('#lg-btn').onclick = function () {
+  PW = $('#lg-pw').value;
+  call('login').then(function (r) {
+    ROLE = r.role;
+    try { sessionStorage.setItem('tc_fin_pw', PW); sessionStorage.setItem('tc_fin_role', ROLE); } catch (e) {}
+    tampilPeran();
+    $('#lg-pw').value = '';
+    show(show.tujuan && show.tujuan !== 'absen' ? show.tujuan : 'bon');
+  }).catch(function (e) { PW = ''; say('#lg-msg', errText(e), true); });
+};
+$('#logout').onclick = function () {
+  PW = ''; ROLE = '';
+  try { sessionStorage.removeItem('tc_fin_pw'); sessionStorage.removeItem('tc_fin_role'); } catch (e) {}
+  tampilPeran(); show('absen');
+};
+$('#lg-pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('#lg-btn').click(); });
+
+// ---------- absen ----------
+function jam() {
+  var f = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Pontianak', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  $('#ab-clock').textContent = f.format(new Date()) + ' WIB';
+}
+jam(); setInterval(jam, 20000);
+function gambarPin() { $('#ab-dots').textContent = '•'.repeat($('#ab-pin').value.length); }
+$('#ab-pad').addEventListener('click', function (e) {
+  var k = e.target.dataset && e.target.dataset.k;
+  if (!k) return;
+  var v = $('#ab-pin').value;
+  if (k === 'del') v = v.slice(0, -1);
+  else if (k === 'clr') v = '';
+  else if (v.length < 6) v += k;
+  $('#ab-pin').value = v; gambarPin();
+});
+document.addEventListener('keydown', function (e) {
+  if ($('#tab-absen').hidden) return;
+  if (/^\d$/.test(e.key) && $('#ab-pin').value.length < 6) { $('#ab-pin').value += e.key; gambarPin(); }
+  else if (e.key === 'Backspace') { $('#ab-pin').value = $('#ab-pin').value.slice(0, -1); gambarPin(); }
+});
+document.querySelectorAll('[data-absen]').forEach(function (b) {
+  b.onclick = function () {
+    var pin = $('#ab-pin').value.trim();
+    $('#ab-msg').textContent = 'Mengirim...';
+    call('absenPin', { pin: pin, mode: b.dataset.absen }).then(function (r) {
+      $('#ab-pin').value = ''; gambarPin();
+      var t = r.nama + ', absen ' + (r.mode === 'masuk' ? 'masuk' : 'keluar') + ' tercatat pukul ' + r.jam + '.';
+      if (r.menit_kerja != null) t += ' Lama kerja ' + Math.floor(r.menit_kerja / 60) + ' jam ' + (r.menit_kerja % 60) + ' menit.';
+      say('#ab-msg', t);
+    }).catch(function (e) { say('#ab-msg', errText(e), true); });
+  };
+});
+
+// ---------- bon & hutang ----------
+var BON_LIST = [];
+$('#bn-tgl').value = hariIni();
+$('#bm-tgl').value = hariIni();
+$('#bn-filter').onchange = loadBon;
+
+function loadHutang() {
+  return call('ringkasanHutang').then(function (h) {
+    var later = Math.max(0, h.total_hutang - h.lewat_tempo - h.tempo_7_hari);
+    var t = h.total_hutang || 1;
+    var tunggu = h.menunggu ? '<p class="notice" style="margin:14px 0 0">' + h.menunggu + ' bon menunggu konfirmasi barang dan harga.</p>' : '';
+    $('#bn-sum').innerHTML = (h.jumlah_bon === 0
+      ? '<div class="ledger-head"><div class="total"><div class="big">Rp 0</div><div class="k">Tidak ada hutang ke supplier.</div></div></div>'
+      : '<div class="ledger-head">' +
+        '<div class="total"><div class="big">' + rp(h.total_hutang) + '</div><div class="k">Total hutang dari ' + h.jumlah_bon + ' bon</div></div>' +
+        '<div class="due"><div class="money">' + rp(h.lewat_tempo) + '</div><div class="k">Lewat jatuh tempo</div></div>' +
+        '<div class="soon"><div class="money">' + rp(h.tempo_7_hari) + '</div><div class="k">Jatuh tempo 7 hari ke depan</div></div></div>' +
+        '<div class="strip" role="img" aria-label="Komposisi hutang menurut jatuh tempo">' +
+        '<span class="s-due" style="flex-grow:' + (h.lewat_tempo / t) + '"></span>' +
+        '<span class="s-soon" style="flex-grow:' + (h.tempo_7_hari / t) + '"></span>' +
+        '<span class="s-later" style="flex-grow:' + (later / t) + '"></span></div>' +
+        '<div class="strip-legend"><span><i style="background:var(--due)"></i>Lewat tempo</span>' +
+        '<span><i style="background:var(--soon)"></i>7 hari</span><span><i style="background:var(--bean)"></i>Lebih dari 7 hari (' + rp(later) + ')</span></div>') + tunggu;
+  });
+}
+function terpilih() {
+  return Array.prototype.map.call(document.querySelectorAll('.bn-cek:checked'), function (c) { return c.value; });
+}
+function updateMulti() {
+  var ids = terpilih();
+  var bons = BON_LIST.filter(function (b) { return ids.indexOf(b.bon_id) >= 0; });
+  $('#bn-multi').hidden = ids.length === 0;
+  var sup = {};
+  bons.forEach(function (b) { sup[b.supplier] = 1; });
+  var total = bons.reduce(function (s, b) { return s + b.sisa_rp; }, 0);
+  var beda = Object.keys(sup).length > 1;
+  $('#bn-multi-info').innerHTML = esc(ids.length + ' bon terpilih, total ' + rp(total) + '.') +
+    (beda ? ' <span class="err">Supplier berbeda. Pilih bon dari satu supplier saja.</span>' : '');
+  $('#bm-save').disabled = beda;
+}
+$('#bm-save').onclick = function () {
+  var f = $('#bm-file').files[0];
+  if (!f) return say('#bm-msg', 'Unggah bukti transfer dulu.', true);
+  say('#bm-msg', 'Menyimpan...');
+  prepFile(f).then(function (berkas) {
+    return call('bayarBanyak', { bon_ids: terpilih(), tanggal_bayar: $('#bm-tgl').value, metode: $('#bm-met').value, bukti: berkas });
+  }).then(function (r) {
+    var txt = r.jumlah_bon + ' bon lunas (' + rp(r.total_rp) + ') dan sudah diarsipkan.';
+    if (r.arsip_gagal.length) txt += ' ' + r.arsip_gagal.length + ' file gagal dipindah ke arsip; pindahkan manual di Drive.';
+    say('#bm-msg', txt);
+    $('#bm-file').value = '';
+    setTimeout(loadBon, 1200);
+  }).catch(function (e) { say('#bm-msg', errText(e), true); });
+};
+$('#bn-save').onclick = function () {
+  var f = $('#bn-file').files[0];
+  if (!f) return say('#bn-msg', 'Unggah foto atau PDF bon dulu.', true);
+  say('#bn-msg', 'Menyimpan...');
+  prepFile(f).then(function (berkas) {
+    return call('tambahBon', {
+      tanggal_bon: $('#bn-tgl').value, supplier: $('#bn-sup').value, deskripsi: $('#bn-desc').value,
+      total_rp: $('#bn-total').value.trim(), file: berkas,
+      kategori: $('#bn-kat').value, termin_hari: $('#bn-termin').value.trim(),
+      bank: $('#bn-bank').value, no_rekening: $('#bn-norek').value, atas_nama: $('#bn-an').value
+    });
+  }).then(function () {
+    say('#bn-msg', 'Foto bon tersimpan. Sekarang hitung barang dan cek harga, lalu konfirmasi bon di daftar atas.');
+    ['#bn-sup', '#bn-desc', '#bn-total', '#bn-file', '#bn-bank', '#bn-norek', '#bn-an'].forEach(function (s) { $(s).value = ''; });
+    $('#bn-termin').value = '0';
+    $('#bn-filter').value = 'AKTIF';
+    loadBon().then(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  }).catch(function (e) { say('#bn-msg', errText(e), true); });
+};
+$('#bn-sup').addEventListener('change', function () {
+  var s = $('#bn-sup').value.trim();
+  if (!s || $('#bn-norek').value) return;
+  call('rekeningSupplier', { supplier: s }).then(function (r) {
+    if (!r || $('#bn-norek').value) return;
+    $('#bn-bank').value = r.bank; $('#bn-norek').value = r.no_rekening; $('#bn-an').value = r.atas_nama;
+  }).catch(function () {});
+});
+window.salinRek = function (no, el) {
+  var done = function () { el.textContent = 'Tersalin'; setTimeout(function () { el.textContent = 'Salin nomor'; }, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(no).then(done, function () { prompt('Salin nomor rekening:', no); });
+  else prompt('Salin nomor rekening:', no);
+};
+function rekHtml(b) {
+  if (!b.no_rekening) return '<div class="rek muted">Rekening belum diisi. Isi saat konfirmasi, atau bayar tunai.</div>';
+  return '<div class="rek"><span>' + esc(b.bank) + '</span><span class="no">' + esc(String(b.no_rekening).replace(/(\d{4})(?=\d)/g, '$1 ')) +
+    '</span><span>a.n. ' + esc(b.atas_nama) + '</span><button type="button" class="btn quiet" onclick="salinRek(\'' + esc(b.no_rekening) + '\', this)">Salin nomor</button></div>';
+}
+function konfirmasiHtml(b) {
+  var id = b.bon_id;
+  return '<details open><summary>Konfirmasi bon ini</summary>' +
+    '<p class="muted">Cocokkan foto bon dengan barang yang datang: jumlah tiap barang dan harga per barang.</p>' +
+    '<div class="field"><label for="kf-tot-' + id + '">Total bon (Rp)</label><input id="kf-tot-' + id + '" inputmode="numeric" value="' + (b.total_rp || '') + '"></div>' +
+    '<label class="check"><input type="checkbox" id="kf-brg-' + id + '">Barang sesuai bon (jumlah sudah dihitung)</label>' +
+    '<label class="check"><input type="checkbox" id="kf-hrg-' + id + '">Harga sesuai (kesepakatan / PO)</label>' +
+    '<div class="field"><label for="kf-cat-' + id + '">Catatan selisih (jika ada)</label><input id="kf-cat-' + id + '" placeholder="Contoh: susu kurang 2 L, sudah dipotong dari total"></div>' +
+    '<div class="cols"><div class="field"><label for="kf-bank-' + id + '">Bank</label><input id="kf-bank-' + id + '" value="' + esc(b.bank || '') + '"></div>' +
+    '<div class="field"><label for="kf-no-' + id + '">Nomor rekening</label><input id="kf-no-' + id + '" inputmode="numeric" value="' + esc(b.no_rekening || '') + '"></div>' +
+    '<div class="field"><label for="kf-an-' + id + '">Atas nama</label><input id="kf-an-' + id + '" value="' + esc(b.atas_nama || '') + '"></div></div>' +
+    '<button class="btn" onclick="konfirmasi(\'' + id + '\')">Konfirmasi bon</button><div class="msg" id="kf-msg-' + id + '"></div></details>';
+}
+window.konfirmasi = function (id) {
+  say('#kf-msg-' + id, 'Menyimpan...');
+  call('konfirmasiBon', {
+    bon_id: id, total_rp: $('#kf-tot-' + id).value.trim(), barang_sesuai: $('#kf-brg-' + id).checked, harga_sesuai: $('#kf-hrg-' + id).checked,
+    catatan: $('#kf-cat-' + id).value, bank: $('#kf-bank-' + id).value, no_rekening: $('#kf-no-' + id).value, atas_nama: $('#kf-an-' + id).value
+  }).then(function (r) {
+    say('#kf-msg-' + id, 'Bon dikonfirmasi: ' + rp(r.total_rp) + '. Sekarang masuk daftar hutang.');
+    setTimeout(loadBon, 1200);
+  }).catch(function (e) { say('#kf-msg-' + id, errText(e), true); });
+};
+var KAT = { BAHAN: 'Bahan baku', OPERASIONAL: 'Operasional', PERALATAN: 'Peralatan', LAINNYA: 'Lainnya' };
+function loadBon() {
+  loadHutang().catch(function () {});
+  return call('listBon', { status: $('#bn-filter').value }).then(function (list) {
+    BON_LIST = list;
+    $('#bn-multi').hidden = true;
+    var sup = {};
+    list.forEach(function (b) { sup[b.supplier] = 1; });
+    $('#dl-sup').innerHTML = Object.keys(sup).map(function (s) { return '<option value="' + esc(s) + '">'; }).join('');
+    if (!list.length) { $('#bn-list').innerHTML = kosong('Belum ada bon di daftar ini. Catat bon baru di bawah.'); return; }
+    $('#bn-list').innerHTML = list.map(function (b) {
+      if (b.status === 'MENUNGGU_KONFIRMASI') {
+        return '<div class="bon st-tunggu"><span></span><div><div class="sup">' + esc(b.supplier) + '<span class="chip">' + esc(KAT[b.kategori] || b.kategori) + '</span></div>' +
+          '<div class="meta"><span class="notice">Menunggu konfirmasi barang dan harga</span></div>' +
+          '<div class="meta">Bon ' + esc(tglPanjang(b.tanggal_bon)) + (b.deskripsi ? ', ' + esc(b.deskripsi) : '') +
+          '. <a class="link" href="' + esc(b.file_bon_url) + '" target="_blank" rel="noopener">Buka foto bon</a></div></div>' +
+          '<div class="amt"><div class="money">' + (b.total_rp ? rp(b.total_rp) : 'Rp –') + '</div><div class="muted">belum dicek</div></div>' +
+          konfirmasiHtml(b) + '</div>';
+      }
+      var lunas = b.status === 'LUNAS';
+      var cls = lunas ? 'st-lunas' : (b.lewat_tempo ? 'st-due' : 'st-hutang');
+      var cek = (lunas || !OWNER()) ? '<span></span>' :
+        '<input type="checkbox" class="bn-cek" value="' + esc(b.bon_id) + '" onchange="updateMulti()" aria-label="Pilih bon ' + esc(b.supplier) + '">';
+      var status = lunas ? 'Lunas ' + esc(tglPanjang(b.paid_at)) + ', bon dan bukti sudah diarsipkan' :
+        (b.lewat_tempo ? '<span class="due-txt">Lewat jatuh tempo ' + esc(tglPanjang(b.jatuh_tempo)) + '</span>' : 'Jatuh tempo ' + esc(tglPanjang(b.jatuh_tempo))) +
+        (b.status === 'SEBAGIAN' ? ', sudah dibayar ' + rp(b.dibayar_rp) : '');
+      var bayar = lunas ? '' : !OWNER() ? '<div class="muted" style="grid-column:2/-1">Siap dibayar. Pembayaran dilakukan oleh pemilik.</div>' :
+        '<details><summary>Bayar bon ini</summary>' +
+        '<div class="cols"><div class="field"><label for="py-tgl-' + b.bon_id + '">Tanggal bayar</label><input id="py-tgl-' + b.bon_id + '" type="date" value="' + hariIni() + '"></div>' +
+        '<div class="field"><label for="py-jml-' + b.bon_id + '">Jumlah (Rp)</label><input id="py-jml-' + b.bon_id + '" inputmode="numeric" value="' + b.sisa_rp + '"></div>' +
+        '<div class="field"><label for="py-met-' + b.bon_id + '">Metode</label><select id="py-met-' + b.bon_id + '"><option>Transfer</option><option>Tunai</option><option>QRIS</option><option>Lainnya</option></select></div></div>' +
+        '<div class="field"><label for="py-file-' + b.bon_id + '">Bukti transfer</label><input id="py-file-' + b.bon_id + '" type="file" accept="image/*,application/pdf"></div>' +
+        '<button class="btn" onclick="bayar(\'' + b.bon_id + '\')">Simpan pembayaran</button>' +
+        '<div class="msg" id="py-msg-' + b.bon_id + '"></div></details>';
+      return '<div class="bon ' + cls + '">' + cek +
+        '<div><div class="sup">' + esc(b.supplier) + '<span class="chip">' + esc(KAT[b.kategori] || b.kategori) + '</span></div>' +
+        '<div class="meta">' + status + '</div>' +
+        '<div class="meta">Bon ' + esc(tglPanjang(b.tanggal_bon)) + (b.deskripsi ? ', ' + esc(b.deskripsi) : '') +
+        '. <a class="link" href="' + esc(b.file_bon_url) + '" target="_blank" rel="noopener">Lihat foto bon</a></div>' +
+        (lunas ? '' : rekHtml(b)) + '</div>' +
+        '<div class="amt"><div class="money">' + rp(lunas ? b.total_rp : b.sisa_rp) + '</div>' +
+        '<div class="muted">' + (lunas ? 'dibayar' : (b.status === 'SEBAGIAN' ? 'sisa dari ' + rp(b.total_rp) : 'belum dibayar')) + '</div></div>' +
+        bayar + '</div>';
+    }).join('');
+  });
+}
+window.bayar = function (bonId) {
+  var f = $('#py-file-' + bonId).files[0];
+  if (!f) return say('#py-msg-' + bonId, 'Unggah bukti transfer dulu.', true);
+  say('#py-msg-' + bonId, 'Menyimpan...');
+  prepFile(f).then(function (berkas) {
+    return call('bayarBon', {
+      bon_id: bonId, tanggal_bayar: $('#py-tgl-' + bonId).value, jumlah_rp: $('#py-jml-' + bonId).value.trim(),
+      metode: $('#py-met-' + bonId).value, bukti: berkas
+    });
+  }).then(function (r) {
+    var txt = r.status === 'LUNAS' ? 'Lunas. Bon dan bukti sudah diarsipkan.' : 'Pembayaran tersimpan. Sisa ' + rp(r.sisa_rp) + '.';
+    if (r.arsip_gagal && r.arsip_gagal.length) txt += ' ' + r.arsip_gagal.length + ' file gagal dipindah ke arsip; pindahkan manual di Drive.';
+    say('#py-msg-' + bonId, txt);
+    setTimeout(loadBon, 1200);
+  }).catch(function (e) { say('#py-msg-' + bonId, errText(e), true); });
+};
+
+// ---------- omset ----------
+$('#om-tgl').value = hariIni();
+$('#om-ym').value = bulanIni();
+$('#om-ym').onchange = loadOmset;
+$('#om-save').onclick = function () {
+  call('simpanOmset', {
+    tanggal: $('#om-tgl').value, total_rp: $('#om-total').value.trim(),
+    tunai_rp: $('#om-tunai').value.trim() || '0', catatan: $('#om-cat').value
+  }).then(function (r) {
+    say('#om-msg', 'Omset ' + tglPanjang(r.tanggal) + ' tersimpan: ' + rp(r.total_rp) + '.');
+    $('#om-ym').value = r.tanggal.slice(0, 7); loadOmset();
+  }).catch(function (e) { say('#om-msg', errText(e), true); });
+};
+function loadOmset() {
+  var ym = $('#om-ym').value || bulanIni();
+  return call('getOmsetBulan', { ym: ym }).then(function (d) {
+    var html = '<div class="cols" style="margin:6px 0 18px">' +
+      '<div><div class="money">' + rp(d.total) + '</div><div class="muted">Total dari ' + d.jumlah_hari + ' hari</div></div>' +
+      '<div><div class="money">' + rp(d.tunai) + '</div><div class="muted">Tunai</div></div>' +
+      '<div><div class="money">' + rp(d.non_tunai) + '</div><div class="muted">Non-tunai</div></div></div>';
+    if (!d.hari.length) { $('#om-sum').innerHTML = html + kosong('Belum ada omset di bulan ini. Impor dari Majoo atau catat manual.'); return; }
+    html += '<div class="table-wrap"><table><tr><th>Tanggal</th><th class="r">Total</th><th class="r">Tunai</th><th class="r">Non-tunai</th><th>Catatan</th></tr>';
+    d.hari.forEach(function (h) {
+      html += '<tr><td>' + esc(tglPanjang(h.tanggal)) + '</td><td class="r">' + rp(h.total_rp) + '</td><td class="r">' + rp(h.tunai_rp) +
+        '</td><td class="r">' + rp(h.non_tunai_rp) + '</td><td>' + esc(h.catatan) + '</td></tr>';
+    });
+    $('#om-sum').innerHTML = html + '</table></div>';
+  });
+}
+
+// ---------- impor CSV Majoo ----------
+$('#im-prev').onclick = function () {
+  call('previewImporOmset', { csv: $('#im-csv').value }).then(function (r) {
+    var html = '<div class="table-wrap"><table><tr><th>Tanggal</th><th class="r">Total</th><th class="r">Tunai</th><th class="r">Non-tunai</th></tr>' +
+      r.hari.map(function (h) {
+        return '<tr><td>' + esc(tglPanjang(h.tanggal)) + '</td><td class="r">' + rp(h.total_rp) + '</td><td class="r">' + rp(h.tunai_rp) +
+          '</td><td class="r">' + rp(h.non_tunai_rp) + '</td></tr>';
+      }).join('') + '</table></div>';
+    if (r.peringatan.length) html += '<p class="err">' + r.peringatan.map(esc).join('<br>') + '</p>';
+    $('#im-out').innerHTML = html;
+    $('#im-save').disabled = false;
+    say('#im-msg', r.hari.length + ' hari terbaca. Cocokkan dengan ringkasan di Majoo, lalu simpan.');
+  }).catch(function (e) { $('#im-save').disabled = true; say('#im-msg', errText(e), true); });
+};
+$('#im-save').onclick = function () {
+  call('simpanImporOmset', { csv: $('#im-csv').value }).then(function (r) {
+    say('#im-msg', 'Omset ' + r.jumlah_hari + ' hari tersimpan.');
+    $('#im-save').disabled = true;
+    loadOmset();
+  }).catch(function (e) { say('#im-msg', errText(e), true); });
+};
+
+// ---------- karyawan ----------
+function loadKaryawan() {
+  return call('listKaryawan').then(function (list) {
+    KARYAWAN = list;
+    $('#kr-list').innerHTML = list.length ? '<table><tr><th>Nama</th><th class="r">Gaji pokok</th><th class="r">Lembur per jam</th><th>Status</th><th></th></tr>' +
+      list.map(function (k) {
+        return '<tr><td>' + esc(k.nama) + '</td><td class="r">' + rp(k.gaji_pokok) + '</td><td class="r">' + rp(k.tarif_lembur_jam) +
+          '</td><td>' + (k.aktif === 'YA' ? 'Aktif' : 'Tidak aktif') + '</td><td class="r"><button class="btn quiet" onclick="editKar(\'' + k.karyawan_id + '\')">Ubah</button></td></tr>';
+      }).join('') + '</table>' : kosong('Belum ada karyawan. Tambahkan di formulir bawah.');
+  });
+}
+window.editKar = function (id) {
+  var k = KARYAWAN.filter(function (x) { return x.karyawan_id === id; })[0];
+  if (!k) return;
+  $('#kr-id').value = k.karyawan_id; $('#kr-nama').value = k.nama; $('#kr-pin').value = '';
+  $('#kr-aktif').value = k.aktif; $('#kr-gaji').value = k.gaji_pokok; $('#kr-tarif').value = k.tarif_lembur_jam;
+  $('#kr-title').textContent = 'Ubah data ' + k.nama;
+  $('#kr-nama').focus();
+};
+$('#kr-reset').onclick = function () {
+  ['#kr-id', '#kr-nama', '#kr-pin', '#kr-gaji', '#kr-tarif'].forEach(function (s) { $(s).value = ''; });
+  $('#kr-aktif').value = 'YA';
+  $('#kr-title').textContent = 'Tambah karyawan';
+};
+$('#kr-save').onclick = function () {
+  call('simpanKaryawan', {
+    karyawan_id: $('#kr-id').value, nama: $('#kr-nama').value, pin: $('#kr-pin').value.trim(),
+    gaji_pokok: $('#kr-gaji').value.trim() || '0', tarif_lembur_jam: $('#kr-tarif').value.trim() || '0', aktif: $('#kr-aktif').value
+  }).then(function () {
+    say('#kr-msg', 'Data karyawan tersimpan.');
+    $('#kr-reset').onclick(); loadKaryawan();
+  }).catch(function (e) { say('#kr-msg', errText(e), true); });
+};
+
+// ---------- shift ----------
+function loadKaryawanOpsi() {
+  return call('listKaryawan').then(function (list) {
+    KARYAWAN = list;
+    $('#sf-kar').innerHTML = list.filter(function (k) { return k.aktif === 'YA'; })
+      .map(function (k) { return '<option value="' + esc(k.karyawan_id) + '">' + esc(k.nama) + '</option>'; }).join('');
+  });
+}
+function loadShift() {
+  $('#sf-tgl').value = $('#sf-tgl').value || hariIni();
+  $('#sf-ym').value = $('#sf-ym').value || bulanIni();
+  return call('listShift', { ym: $('#sf-ym').value }).then(function (list) {
+    $('#sf-list').innerHTML = list.length ? '<table><tr><th>Tanggal</th><th>Nama</th><th>Shift</th><th>Jam</th><th></th></tr>' +
+      list.map(function (s) {
+        return '<tr><td>' + esc(tglPanjang(s.tanggal)) + '</td><td>' + esc(s.nama) + '</td><td>' + esc(s.kode_shift) + '</td><td>' +
+          esc(s.jam_mulai) + '–' + esc(s.jam_selesai) + '</td><td class="r"><button class="btn quiet" onclick="hapusShift(\'' + s.shift_id + '\')">Hapus</button></td></tr>';
+      }).join('') + '</table>' : kosong('Belum ada jadwal di bulan ini.');
+  });
+}
+$('#sf-ym').onchange = loadShift;
+$('#sf-save').onclick = function () {
+  call('simpanShift', {
+    tanggal: $('#sf-tgl').value, karyawan_id: $('#sf-kar').value, kode_shift: $('#sf-kode').value,
+    jam_mulai: $('#sf-mulai').value, jam_selesai: $('#sf-selesai').value
+  }).then(function () { say('#sf-msg', 'Shift ditambahkan.'); loadShift(); })
+    .catch(function (e) { say('#sf-msg', errText(e), true); });
+};
+window.hapusShift = function (id) {
+  if (!confirm('Hapus jadwal shift ini?')) return;
+  call('hapusShift', { shift_id: id }).then(loadShift).catch(function (e) { alert(errText(e)); });
+};
+
+// ---------- rekap absensi ----------
+$('#ab-ym').value = bulanIni();
+$('#ab-ym').onchange = loadAbsensi;
+function loadAbsensi() {
+  return call('listAbsensi', { ym: $('#ab-ym').value || bulanIni() }).then(function (list) {
+    $('#ab-list').innerHTML = list.length ? '<table><tr><th>Tanggal</th><th>Nama</th><th>Masuk</th><th>Keluar</th><th class="r">Lama kerja</th></tr>' +
+      list.map(function (a) {
+        return '<tr><td>' + esc(tglPanjang(a.tanggal)) + '</td><td>' + esc(a.nama) + '</td><td>' + esc(a.jam_masuk) + '</td><td>' +
+          esc(a.jam_keluar || '–') + '</td><td class="r">' + (a.jam_keluar ? (Math.round(a.menit_kerja / 6) / 10) + ' jam' : 'belum keluar') + '</td></tr>';
+      }).join('') + '</table>' : kosong('Belum ada absensi di bulan ini.');
+  });
+}
+
+// ---------- gaji ----------
+$('#gj-ym').value = bulanIni();
+$('#gj-hitung').onclick = function () {
+  say('#gj-msg', 'Menghitung...');
+  call('hitungGaji', { periode: $('#gj-ym').value }).then(function (list) { say('#gj-msg', 'Gaji ' + list.length + ' karyawan sudah dihitung.'); renderGaji(list); })
+    .catch(function (e) { say('#gj-msg', errText(e), true); });
+};
+$('#gj-ym').onchange = loadGaji;
+function loadGaji() {
+  return call('listGaji', { periode: $('#gj-ym').value || bulanIni() }).then(renderGaji);
+}
+function renderGaji(list) {
+  var total = list.reduce(function (s, g) { return s + g.total_rp; }, 0);
+  $('#gj-list').innerHTML = list.length ?
+    '<div style="margin:10px 0 16px"><div class="money">' + rp(total) + '</div><div class="muted">Total gaji periode ini</div></div>' +
+    '<table><tr><th>Nama</th><th class="r">Hari</th><th class="r">Jam</th><th class="r">Lembur</th><th class="r">Total</th><th></th></tr>' +
+    list.map(function (g) {
+      var aksi = g.status === 'DRAFT' && !OWNER() ? '<span class="muted">Menunggu dibayar pemilik</span>' : g.status === 'DRAFT' ? '<button class="btn quiet" onclick="gajiDibayar(\'' + g.gaji_id + '\')">Tandai dibayar</button>' :
+        '<span class="ok">Dibayar ' + esc(tglPanjang(g.dibayar_at)) + '</span>';
+      return '<tr><td>' + esc(g.nama) + '</td><td class="r">' + g.hari_hadir + '</td><td class="r">' + g.jam_kerja +
+        '</td><td class="r">' + rp(g.lembur_rp) + '</td><td class="r"><b>' + rp(g.total_rp) + '</b></td><td class="r">' + aksi + '</td></tr>';
+    }).join('') + '</table>' : kosong('Gaji periode ini belum dihitung. Tekan Hitung gaji.');
+}
+window.gajiDibayar = function (id) {
+  if (!confirm('Tandai gaji ini sudah dibayar?')) return;
+  call('tandaiGajiDibayar', { gaji_id: id }).then(loadGaji).catch(function (e) { alert(errText(e)); });
+};
+
+if (PW && !ROLE) { PW = ''; }   // sesi lama tanpa peran: minta masuk ulang
+tampilPeran();
+show('absen');
+</script>
+</body>
+</html>
