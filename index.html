@@ -135,6 +135,22 @@ tr:last-child td{border-bottom:0}
 .bon summary{cursor:pointer;color:var(--bean);font-weight:600;list-style:none;padding:6px 0}
 .bon summary::-webkit-details-marker{display:none}
 .bon details[open] summary{margin-bottom:10px}
+.capture{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.capture .msg{flex-basis:100%}
+.btn.big{min-height:54px;padding:16px 22px;font-size:17px}
+label.btn{display:inline-flex;align-items:center}
+.bd-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:32px;margin-top:8px}
+.bd-photo{margin:0;position:sticky;top:20px;align-self:start}
+.bd-photo img{display:block;width:100%;max-height:82vh;object-fit:contain;background:var(--sheet);border:1px solid var(--line);border-radius:12px;cursor:zoom-in}
+.bd-photo img.zoom{max-height:none;cursor:zoom-out}
+@media (max-width:860px){.bd-grid{grid-template-columns:1fr}.bd-photo{position:static}.bd-photo img{max-height:55vh}}
+table.lines td{padding:6px 4px;border-bottom:0}
+table.lines input{min-height:40px;padding:8px}
+table.lines .q{width:76px;text-align:right} table.lines .s{width:80px} table.lines .h{width:130px;text-align:right}
+table.lines .del{min-height:40px;padding:8px 12px}
+.sumrow{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:end;margin:20px 0 4px;padding-top:16px;border-top:1px solid var(--line)}
+.ocr{white-space:pre-wrap;font:13px/1.45 ui-monospace,Consolas,monospace;color:var(--soft);background:var(--sheet);padding:12px;border-radius:10px;max-height:320px;overflow:auto}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .paybar{position:sticky;top:12px;z-index:5;margin-bottom:16px;border-color:var(--bean);box-shadow:0 0 0 1px var(--bean)}
 
 /* ---------- absen ---------- */
@@ -216,6 +232,14 @@ tr:last-child td{border-bottom:0}
     <h1>Bon &amp; hutang</h1>
     <p class="lede">Foto bon saat barang datang. Bayar sebelum jatuh tempo, dan unggah bukti transfernya.</p>
 
+    <div class="block capture">
+      <input id="bn-cam" type="file" accept="image/*" capture="environment" hidden>
+      <input id="bn-file" type="file" accept="image/*,application/pdf" hidden>
+      <label class="btn big" for="bn-cam">Foto bon baru</label>
+      <label class="btn quiet" for="bn-file">Pilih dari galeri atau PDF</label>
+      <div class="msg" id="bn-msg" aria-live="polite"></div>
+    </div>
+
     <div class="block" id="bn-sum"></div>
 
     <div class="panel paybar" id="bn-multi" hidden>
@@ -247,29 +271,64 @@ tr:last-child td{border-bottom:0}
       <div id="bn-list"></div>
     </div>
 
-    <div class="block">
-      <h2>Bon masuk</h2>
-      <p class="muted">Langkah 1: foto bon saat barang datang. Langkah 2: hitung barang dan cek harga, lalu konfirmasi di daftar atas. Bon baru bisa dibayar setelah dikonfirmasi.</p>
-      <div class="field"><label for="bn-file">Foto bon</label><input id="bn-file" type="file" accept="image/*,application/pdf" capture="environment"></div>
-      <div class="cols">
-        <div class="field"><label for="bn-tgl">Tanggal bon</label><input id="bn-tgl" type="date"></div>
-        <div class="field"><label for="bn-sup">Supplier</label><input id="bn-sup" list="dl-sup" placeholder="Nama supplier"><datalist id="dl-sup"></datalist></div>
-        <div class="field"><label for="bn-total">Total di bon (Rp)</label><input id="bn-total" inputmode="numeric" placeholder="Boleh diisi saat konfirmasi"></div>
-        <div class="field"><label for="bn-kat">Kategori</label><select id="bn-kat">
-          <option value="BAHAN">Bahan baku</option><option value="OPERASIONAL">Operasional (listrik, sewa, dll.)</option>
-          <option value="PERALATAN">Peralatan</option><option value="LAINNYA">Lainnya</option></select></div>
-        <div class="field"><label for="bn-termin">Termin bayar (hari)</label><input id="bn-termin" inputmode="numeric" value="0"></div>
-        <div class="field"><label for="bn-desc">Isi bon</label><input id="bn-desc" placeholder="Susu 12 L, gula 5 kg"></div>
+  </section>
+
+  <!-- COCOKKAN BON (dibuka setelah foto, atau dari daftar) -->
+  <section id="tab-bondetail" hidden>
+    <button class="btn quiet" id="bd-back">Kembali ke daftar bon</button>
+    <h1 id="bd-title" style="margin-top:18px">Cocokkan bon</h1>
+    <p class="lede" id="bd-lede">Isi di bawah dibaca otomatis dari foto. Cocokkan dengan foto dan barang yang datang, lalu perbaiki yang salah.</p>
+    <div class="msg" id="bd-load"></div>
+    <div class="bd-grid" id="bd-body" hidden>
+      <figure class="bd-photo">
+        <img id="bd-img" alt="Foto bon" title="Klik untuk memperbesar">
+        <figcaption class="muted" id="bd-nofoto" hidden>Foto tidak bisa ditampilkan di sini.</figcaption>
+      </figure>
+      <div>
+        <p class="notice" id="bd-warn" hidden></p>
+        <div class="cols2">
+          <div class="field"><label for="bd-sup">Supplier</label><input id="bd-sup" list="dl-bdsup"><datalist id="dl-bdsup"></datalist></div>
+          <div class="field"><label for="bd-tgl">Tanggal bon</label><input id="bd-tgl" type="date"></div>
+          <div class="field"><label for="bd-kat">Kategori</label><select id="bd-kat">
+            <option value="BAHAN">Bahan baku</option><option value="OPERASIONAL">Operasional (listrik, sewa, dll.)</option>
+            <option value="PERALATAN">Peralatan</option><option value="LAINNYA">Lainnya</option></select></div>
+          <div class="field"><label for="bd-termin">Termin bayar (hari, 0 = langsung)</label><input id="bd-termin" inputmode="numeric"></div>
+        </div>
+
+        <h2>Barang</h2>
+        <div class="table-wrap"><table class="lines">
+          <thead><tr><th>Nama barang</th><th class="r">Jumlah</th><th>Satuan</th><th class="r">Harga total (Rp)</th><th><span class="sr">Hapus</span></th></tr></thead>
+          <tbody id="bd-lines"></tbody>
+        </table></div>
+        <button class="btn quiet" id="bd-add" style="margin-top:10px">Tambah baris</button>
+
+        <div class="sumrow">
+          <div><div class="muted">Jumlah semua barang</div><div class="money" id="bd-sum">Rp 0</div></div>
+          <div class="field" style="margin:0"><label for="bd-total">Total di bon (Rp)</label><input id="bd-total" inputmode="numeric"></div>
+        </div>
+        <p class="muted" id="bd-diff"></p>
+
+        <h2>Rekening supplier</h2>
+        <div class="cols">
+          <div class="field"><label for="bd-bank">Bank</label><input id="bd-bank" placeholder="BCA, BRI, Mandiri"></div>
+          <div class="field"><label for="bd-norek">Nomor rekening</label><input id="bd-norek" inputmode="numeric"></div>
+          <div class="field"><label for="bd-an">Atas nama</label><input id="bd-an"></div>
+        </div>
+        <p class="muted">Kosongkan jika dibayar tunai. Terisi otomatis untuk supplier yang pernah dicatat.</p>
+
+        <div class="field"><label for="bd-cat">Catatan selisih (jika ada)</label><input id="bd-cat" placeholder="Contoh: susu kurang 2 L, sudah dipotong dari total"></div>
+        <div id="bd-checks">
+          <label class="check"><input type="checkbox" id="bd-brg">Barang sesuai bon (jumlah sudah dihitung)</label>
+          <label class="check"><input type="checkbox" id="bd-hrg">Harga sesuai (kesepakatan atau PO)</label>
+        </div>
+        <div class="row-actions" id="bd-actions" style="margin-top:14px">
+          <button class="btn" id="bd-konf">Konfirmasi bon</button>
+          <button class="btn quiet" id="bd-draft">Simpan draf</button>
+        </div>
+        <div class="msg" id="bd-msg"></div>
+        <details style="margin-top:22px"><summary class="link" style="cursor:pointer">Teks yang terbaca dari foto</summary>
+          <pre id="bd-ocr" class="ocr"></pre></details>
       </div>
-      <h2 style="margin-top:8px">Rekening supplier</h2>
-      <p class="muted">Terisi otomatis dari bon sebelumnya untuk supplier yang sama. Kosongkan jika dibayar tunai.</p>
-      <div class="cols">
-        <div class="field"><label for="bn-bank">Bank</label><input id="bn-bank" placeholder="BCA, BRI, Mandiri"></div>
-        <div class="field"><label for="bn-norek">Nomor rekening</label><input id="bn-norek" inputmode="numeric"></div>
-        <div class="field"><label for="bn-an">Atas nama</label><input id="bn-an"></div>
-      </div>
-      <button class="btn" id="bn-save">Simpan foto bon</button>
-      <div class="msg" id="bn-msg"></div>
     </div>
   </section>
 
@@ -453,7 +512,7 @@ var LOAD = {
 function show(tab) {
   var tujuan = tab;
   if (tab !== 'absen' && !PW) tab = 'login';
-  document.querySelectorAll('nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tujuan); });
+  document.querySelectorAll('nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === (tujuan === 'bondetail' ? 'bon' : tujuan)); });
   document.querySelectorAll('main > section').forEach(function (s) { s.hidden = s.id !== 'tab-' + tab; });
   show.tujuan = tujuan;
   window.scrollTo(0, 0);
@@ -516,7 +575,6 @@ document.querySelectorAll('[data-absen]').forEach(function (b) {
 
 // ---------- bon & hutang ----------
 var BON_LIST = [];
-$('#bn-tgl').value = hariIni();
 $('#bm-tgl').value = hariIni();
 $('#bn-filter').onchange = loadBon;
 
@@ -568,33 +626,18 @@ $('#bm-save').onclick = function () {
     setTimeout(loadBon, 1200);
   }).catch(function (e) { say('#bm-msg', errText(e), true); });
 };
-$('#bn-save').onclick = function () {
-  var f = $('#bn-file').files[0];
-  if (!f) return say('#bn-msg', 'Unggah foto atau PDF bon dulu.', true);
-  say('#bn-msg', 'Menyimpan...');
-  prepFile(f).then(function (berkas) {
-    return call('tambahBon', {
-      tanggal_bon: $('#bn-tgl').value, supplier: $('#bn-sup').value, deskripsi: $('#bn-desc').value,
-      total_rp: $('#bn-total').value.trim(), file: berkas,
-      kategori: $('#bn-kat').value, termin_hari: $('#bn-termin').value.trim(),
-      bank: $('#bn-bank').value, no_rekening: $('#bn-norek').value, atas_nama: $('#bn-an').value
-    });
-  }).then(function () {
-    say('#bn-msg', 'Foto bon tersimpan. Sekarang hitung barang dan cek harga, lalu konfirmasi bon di daftar atas.');
-    ['#bn-sup', '#bn-desc', '#bn-total', '#bn-file', '#bn-bank', '#bn-norek', '#bn-an'].forEach(function (s) { $(s).value = ''; });
-    $('#bn-termin').value = '0';
-    $('#bn-filter').value = 'AKTIF';
-    loadBon().then(function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
-  }).catch(function (e) { say('#bn-msg', errText(e), true); });
-};
-$('#bn-sup').addEventListener('change', function () {
-  var s = $('#bn-sup').value.trim();
-  if (!s || $('#bn-norek').value) return;
-  call('rekeningSupplier', { supplier: s }).then(function (r) {
-    if (!r || $('#bn-norek').value) return;
-    $('#bn-bank').value = r.bank; $('#bn-norek').value = r.no_rekening; $('#bn-an').value = r.atas_nama;
-  }).catch(function () {});
-});
+// ---------- foto bon -> baca otomatis -> layar cocokkan ----------
+function kirimFoto(input) {
+  var f = input.files[0];
+  input.value = '';
+  if (!f) return;
+  say('#bn-msg', 'Mengunggah dan membaca bon. Tunggu 10–30 detik...');
+  prepFile(f).then(function (berkas) { return call('fotoBon', { file: berkas }); })
+    .then(function (d) { $('#bn-msg').textContent = ''; show('bondetail'); isiDetail(d); })
+    .catch(function (e) { say('#bn-msg', errText(e), true); });
+}
+$('#bn-cam').onchange = function () { kirimFoto(this); };
+$('#bn-file').onchange = function () { kirimFoto(this); };
 window.salinRek = function (no, el) {
   var done = function () { el.textContent = 'Tersalin'; setTimeout(function () { el.textContent = 'Salin nomor'; }, 1500); };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(no).then(done, function () { prompt('Salin nomor rekening:', no); });
@@ -605,29 +648,108 @@ function rekHtml(b) {
   return '<div class="rek"><span>' + esc(b.bank) + '</span><span class="no">' + esc(String(b.no_rekening).replace(/(\d{4})(?=\d)/g, '$1 ')) +
     '</span><span>a.n. ' + esc(b.atas_nama) + '</span><button type="button" class="btn quiet" onclick="salinRek(\'' + esc(b.no_rekening) + '\', this)">Salin nomor</button></div>';
 }
-function konfirmasiHtml(b) {
-  var id = b.bon_id;
-  return '<details open><summary>Konfirmasi bon ini</summary>' +
-    '<p class="muted">Cocokkan foto bon dengan barang yang datang: jumlah tiap barang dan harga per barang.</p>' +
-    '<div class="field"><label for="kf-tot-' + id + '">Total bon (Rp)</label><input id="kf-tot-' + id + '" inputmode="numeric" value="' + (b.total_rp || '') + '"></div>' +
-    '<label class="check"><input type="checkbox" id="kf-brg-' + id + '">Barang sesuai bon (jumlah sudah dihitung)</label>' +
-    '<label class="check"><input type="checkbox" id="kf-hrg-' + id + '">Harga sesuai (kesepakatan / PO)</label>' +
-    '<div class="field"><label for="kf-cat-' + id + '">Catatan selisih (jika ada)</label><input id="kf-cat-' + id + '" placeholder="Contoh: susu kurang 2 L, sudah dipotong dari total"></div>' +
-    '<div class="cols"><div class="field"><label for="kf-bank-' + id + '">Bank</label><input id="kf-bank-' + id + '" value="' + esc(b.bank || '') + '"></div>' +
-    '<div class="field"><label for="kf-no-' + id + '">Nomor rekening</label><input id="kf-no-' + id + '" inputmode="numeric" value="' + esc(b.no_rekening || '') + '"></div>' +
-    '<div class="field"><label for="kf-an-' + id + '">Atas nama</label><input id="kf-an-' + id + '" value="' + esc(b.atas_nama || '') + '"></div></div>' +
-    '<button class="btn" onclick="konfirmasi(\'' + id + '\')">Konfirmasi bon</button><div class="msg" id="kf-msg-' + id + '"></div></details>';
-}
-window.konfirmasi = function (id) {
-  say('#kf-msg-' + id, 'Menyimpan...');
-  call('konfirmasiBon', {
-    bon_id: id, total_rp: $('#kf-tot-' + id).value.trim(), barang_sesuai: $('#kf-brg-' + id).checked, harga_sesuai: $('#kf-hrg-' + id).checked,
-    catatan: $('#kf-cat-' + id).value, bank: $('#kf-bank-' + id).value, no_rekening: $('#kf-no-' + id).value, atas_nama: $('#kf-an-' + id).value
-  }).then(function (r) {
-    say('#kf-msg-' + id, 'Bon dikonfirmasi: ' + rp(r.total_rp) + '. Sekarang masuk daftar hutang.');
-    setTimeout(loadBon, 1200);
-  }).catch(function (e) { say('#kf-msg-' + id, errText(e), true); });
+// ---------- layar cocokkan bon ----------
+var BD = null;
+window.bukaBon = function (id) {
+  show('bondetail');
+  $('#bd-body').hidden = true;
+  say('#bd-load', 'Memuat bon...');
+  call('getBonDetail', { bon_id: id }).then(isiDetail).catch(function (e) { say('#bd-load', errText(e), true); });
 };
+function barisHtml(l) {
+  l = l || {};
+  return '<tr><td><input class="ln-nama" aria-label="Nama barang" value="' + esc(l.nama || '') + '"></td>' +
+    '<td><input class="ln-qty q" aria-label="Jumlah" inputmode="decimal" value="' + esc(l.qty != null ? l.qty : '') + '"></td>' +
+    '<td><input class="ln-sat s" aria-label="Satuan" value="' + esc(l.satuan || '') + '"></td>' +
+    '<td><input class="ln-harga h" aria-label="Harga total" inputmode="numeric" value="' + esc(l.harga_rp != null && l.harga_rp !== '' ? l.harga_rp : '') + '"></td>' +
+    '<td><button type="button" class="btn quiet del" aria-label="Hapus baris">×</button></td></tr>';
+}
+function angka(v) { var n = Number(String(v || '').replace(/[.\s]/g, '')); return isFinite(n) ? n : 0; }
+function bacaBaris() {
+  return Array.prototype.map.call(document.querySelectorAll('#bd-lines tr'), function (tr) {
+    return { nama: tr.querySelector('.ln-nama').value, qty: tr.querySelector('.ln-qty').value,
+      satuan: tr.querySelector('.ln-sat').value, harga_rp: tr.querySelector('.ln-harga').value.replace(/[.\s]/g, '') };
+  });
+}
+function hitungBon() {
+  var sum = bacaBaris().reduce(function (s, l) { return s + angka(l.harga_rp); }, 0);
+  $('#bd-sum').textContent = rp(sum);
+  var tot = angka($('#bd-total').value);
+  $('#bd-diff').innerHTML = !tot || tot === sum ? '' :
+    '<span class="notice">Total bon berbeda ' + rp(Math.abs(tot - sum)) + ' dari jumlah barang' + (tot > sum ? ' (lebih besar)' : ' (lebih kecil)') +
+    '. Bisa karena ongkir, diskon, atau ada barang yang belum terbaca.</span> <button type="button" class="btn quiet" id="bd-pakai">Pakai jumlah barang</button>';
+}
+function isiDetail(d) {
+  BD = d;
+  var bisaUbah = d.status === 'MENUNGGU_KONFIRMASI';
+  $('#bd-load').textContent = '';
+  $('#bd-body').hidden = false;
+  $('#bd-title').textContent = bisaUbah ? 'Cocokkan bon' : 'Detail bon';
+  $('#bd-lede').textContent = bisaUbah
+    ? 'Isi di bawah dibaca otomatis dari foto. Cocokkan dengan foto dan barang yang datang, lalu perbaiki yang salah.'
+    : 'Bon ini sudah dikonfirmasi' + (d.dikonfirmasi_at ? ' (' + d.dikonfirmasi_at + ')' : '') + ' dan tidak bisa diubah lagi.';
+  if (d.foto_base64) { $('#bd-img').src = 'data:' + d.foto_mime + ';base64,' + d.foto_base64; $('#bd-img').hidden = false; $('#bd-nofoto').hidden = true; }
+  else { $('#bd-img').hidden = true; $('#bd-nofoto').hidden = false; }
+  $('#bd-img').classList.remove('zoom');
+  $('#bd-warn').hidden = !d.peringatan; $('#bd-warn').textContent = d.peringatan || '';
+  $('#dl-bdsup').innerHTML = (d.suppliers || []).map(function (s) { return '<option value="' + esc(s) + '">'; }).join('');
+  $('#bd-sup').value = d.supplier || ''; $('#bd-tgl').value = d.tanggal_bon || hariIni();
+  $('#bd-kat').value = d.kategori || 'BAHAN'; $('#bd-termin').value = d.termin_hari || 0;
+  $('#bd-lines').innerHTML = (d.lines.length ? d.lines : [{}]).map(barisHtml).join('');
+  $('#bd-total').value = d.total_rp || '';
+  $('#bd-bank').value = d.bank || ''; $('#bd-norek').value = d.no_rekening || ''; $('#bd-an').value = d.atas_nama || '';
+  $('#bd-cat').value = d.catatan_konfirmasi || '';
+  $('#bd-brg').checked = false; $('#bd-hrg').checked = false;
+  $('#bd-ocr').textContent = d.ocr_text || 'Tidak ada teks yang terbaca.';
+  $('#bd-msg').textContent = '';
+  document.querySelectorAll('#bd-body input, #bd-body select').forEach(function (el) { el.disabled = !bisaUbah; });
+  $('#bd-add').hidden = !bisaUbah; $('#bd-actions').hidden = !bisaUbah; $('#bd-checks').hidden = !bisaUbah;
+  document.querySelectorAll('#bd-lines .del').forEach(function (b) { b.hidden = !bisaUbah; });
+  hitungBon();
+}
+$('#bd-back').onclick = function () { show('bon'); };
+$('#bd-img').onclick = function () { this.classList.toggle('zoom'); };
+$('#bd-add').onclick = function () {
+  $('#bd-lines').insertAdjacentHTML('beforeend', barisHtml({}));
+  var rows = document.querySelectorAll('#bd-lines tr');
+  rows[rows.length - 1].querySelector('.ln-nama').focus();
+};
+$('#bd-lines').addEventListener('input', hitungBon);
+$('#bd-total').addEventListener('input', hitungBon);
+$('#bd-lines').addEventListener('click', function (e) {
+  if (e.target.classList.contains('del')) { e.target.closest('tr').remove(); hitungBon(); }
+});
+$('#bd-diff').addEventListener('click', function (e) {
+  if (e.target.id === 'bd-pakai') { $('#bd-total').value = angka($('#bd-sum').textContent.replace('Rp', '')); hitungBon(); }
+});
+$('#bd-sup').addEventListener('change', function () {
+  var s = $('#bd-sup').value.trim();
+  if (!s || $('#bd-norek').value) return;
+  call('rekeningSupplier', { supplier: s }).then(function (r) {
+    if (!r || $('#bd-norek').value) return;
+    $('#bd-bank').value = r.bank; $('#bd-norek').value = r.no_rekening; $('#bd-an').value = r.atas_nama;
+  }).catch(function () {});
+});
+function simpanBon(konfirmasi) {
+  if (!BD) return;
+  say('#bd-msg', 'Menyimpan...');
+  call('simpanBonDetail', {
+    bon_id: BD.bon_id, supplier: $('#bd-sup').value, tanggal_bon: $('#bd-tgl').value, kategori: $('#bd-kat').value,
+    termin_hari: $('#bd-termin').value.trim(), lines: bacaBaris(), total_rp: $('#bd-total').value.replace(/[.\s]/g, ''),
+    bank: $('#bd-bank').value, no_rekening: $('#bd-norek').value, atas_nama: $('#bd-an').value, catatan: $('#bd-cat').value,
+    konfirmasi: konfirmasi, barang_sesuai: $('#bd-brg').checked, harga_sesuai: $('#bd-hrg').checked
+  }).then(function (r) {
+    if (konfirmasi) {
+      say('#bd-msg', 'Bon dikonfirmasi: ' + rp(r.total_rp) + '. Sekarang masuk daftar hutang.');
+      setTimeout(function () { $('#bn-filter').value = 'AKTIF'; show('bon'); }, 1200);
+    } else {
+      say('#bd-msg', 'Draf tersimpan. Bon tetap menunggu konfirmasi.');
+    }
+  }).catch(function (e) { say('#bd-msg', errText(e), true); });
+}
+$('#bd-konf').onclick = function () { simpanBon(true); };
+$('#bd-draft').onclick = function () { simpanBon(false); };
+
 var KAT = { BAHAN: 'Bahan baku', OPERASIONAL: 'Operasional', PERALATAN: 'Peralatan', LAINNYA: 'Lainnya' };
 function loadBon() {
   loadHutang().catch(function () {});
@@ -637,15 +759,15 @@ function loadBon() {
     var sup = {};
     list.forEach(function (b) { sup[b.supplier] = 1; });
     $('#dl-sup').innerHTML = Object.keys(sup).map(function (s) { return '<option value="' + esc(s) + '">'; }).join('');
-    if (!list.length) { $('#bn-list').innerHTML = kosong('Belum ada bon di daftar ini. Catat bon baru di bawah.'); return; }
+    if (!list.length) { $('#bn-list').innerHTML = kosong('Belum ada bon di daftar ini. Tekan Foto bon baru untuk mencatat bon.'); return; }
     $('#bn-list').innerHTML = list.map(function (b) {
       if (b.status === 'MENUNGGU_KONFIRMASI') {
         return '<div class="bon st-tunggu"><span></span><div><div class="sup">' + esc(b.supplier) + '<span class="chip">' + esc(KAT[b.kategori] || b.kategori) + '</span></div>' +
           '<div class="meta"><span class="notice">Menunggu konfirmasi barang dan harga</span></div>' +
           '<div class="meta">Bon ' + esc(tglPanjang(b.tanggal_bon)) + (b.deskripsi ? ', ' + esc(b.deskripsi) : '') +
-          '. <a class="link" href="' + esc(b.file_bon_url) + '" target="_blank" rel="noopener">Buka foto bon</a></div></div>' +
+          '</div></div>' +
           '<div class="amt"><div class="money">' + (b.total_rp ? rp(b.total_rp) : 'Rp –') + '</div><div class="muted">belum dicek</div></div>' +
-          konfirmasiHtml(b) + '</div>';
+          '<div style="grid-column:2/-1"><button class="btn" onclick="bukaBon(\'' + b.bon_id + '\')">Cocokkan dan konfirmasi</button></div></div>';
       }
       var lunas = b.status === 'LUNAS';
       var cls = lunas ? 'st-lunas' : (b.lewat_tempo ? 'st-due' : 'st-hutang');
@@ -666,7 +788,7 @@ function loadBon() {
         '<div><div class="sup">' + esc(b.supplier) + '<span class="chip">' + esc(KAT[b.kategori] || b.kategori) + '</span></div>' +
         '<div class="meta">' + status + '</div>' +
         '<div class="meta">Bon ' + esc(tglPanjang(b.tanggal_bon)) + (b.deskripsi ? ', ' + esc(b.deskripsi) : '') +
-        '. <a class="link" href="' + esc(b.file_bon_url) + '" target="_blank" rel="noopener">Lihat foto bon</a></div>' +
+        '. <a class="link" href="#" onclick="bukaBon(\'' + b.bon_id + '\');return false">Lihat foto dan detail</a></div>' +
         (lunas ? '' : rekHtml(b)) + '</div>' +
         '<div class="amt"><div class="money">' + rp(lunas ? b.total_rp : b.sisa_rp) + '</div>' +
         '<div class="muted">' + (lunas ? 'dibayar' : (b.status === 'SEBAGIAN' ? 'sisa dari ' + rp(b.total_rp) : 'belum dibayar')) + '</div></div>' +
